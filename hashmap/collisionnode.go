@@ -1,65 +1,73 @@
 package hashmap
 
 // collisionNode is a node for holding all values whose keys hash to the same first 30 bits.
-type collisionNode struct {
-    children map[Key]Value
-}
+type collisionNode map[Key]Value
 
 // newCollisionNode creates a new collision node that has its map already allocated.
-func newCollisionNode() *collisionNode {
-    m := make(map[Key]Value)
-    return &collisionNode{m}
+func newCollisionNode() collisionNode {
+    return make(map[Key]Value)
 }
 
+func (n collisionNode) clone() collisionNode {
+    node := newCollisionNode()
+    for k, v := range n {
+        node[k] = v
+    }
+    return node
+}
 
 // Assoc'in a collision node is just managing a map- this map should be very small
 // so copying it should be cheap.
-func (n *collisionNode) assoc(shift, hash int, key Key, val Value) (node inode, count int) {
-    node = newCollisionNode()
-    for k, v := range n.children {
-        node.children[k] = v
-    }
-    node.children[key] = val
-    return node, len(node.children)
+func (n collisionNode) assoc(shift uint, hash uint32, key Key, val Value) inode {
+    newnode := n.clone()
+    newnode[key] = val
+    return newnode
 }
 
-func (n *collisionNode) dissoc(shift, hash int, key Key) (node inode, count int) {
-    if _, ok = n.children[key]; !ok {
-        return n, len(n.children)
+func (n collisionNode) dissoc(shift uint, hash uint32, key Key) inode {
+    if _, ok := n[key]; !ok {
+        return n
     }
-    node = newCollisionNode()
-    for k, v := range n.children {
-        node.children[k] = v
+    newnode := n.clone()
+    if delete(newnode, key); len(newnode) == 0 {
+        return empty
+    } else if len(newnode) == 1 {
+        return &leafNode{key.Hash(), key, newnode[key]}
+    } else if shift >= 30 {
+        var b inode = newBranchNode()
+        for k, v := range newnode {
+            b = b.assoc(shift, k.Hash(), k, v)
+        }
+        return b
     }
-    if delete(node.children, key); len(node.children) == 0 {
-        return empty, 0
-    } else if len(node.children) == 1 {
-        return &leafNode{key, val}, 1
-    }
-    return node, len(node.children)
+    return newnode
 }
 
-func (n *collisionNode) find(shift, hash int, key Key) (val Value, ok bool) {
-    val, ok = n.children[key]
-    return val, ok
+func (n collisionNode) find(shift uint, hash uint32, key Key) (val Value, ok bool) {
+    v, ok := n[key]
+    return v, ok
 }
 
-func (n *collisionNode) keys() []Key {
-    k := make([]Key, len(n.children))
+func (n collisionNode) keys() []Key {
+    k := make([]Key, len(n))
     i := 0
-    for key := range n.children {
+    for key := range n {
         k[i] = key
         i++
     }
     return k
 }
 
-func (n *collisionNode) vals() []Value {
-    v := make([]Value, len(n.children))
+func (n collisionNode) vals() []Value {
+    v := make([]Value, len(n))
     i := 0
-    for _, val := range n.children {
+    for _, val := range n {
         v[i] = val
         i++
     }
     return v
+}
+
+func (n collisionNode) count() int {
+    return len(n)
 }

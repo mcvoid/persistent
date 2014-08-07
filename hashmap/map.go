@@ -18,61 +18,60 @@
 package hashmap
 
 // A Map is a reference to a persistent hash array-mapped trie
-type Map struct{
-    root inode
-    count int
-}
+type Map inode
 
 // A Key is any value which can supply a hash value.
 type Key interface {
-    Hash() int
+    Hash() uint32
 }
 // A value is a placeholder for any kind of data.
 type Value interface{}
 
 // inode describes a trie node.
 type inode interface {
-    assoc(shift, hash int, key Key, val Value) (node inode, count int)
-    dissoc(shift, hash int, key Key) (node inode, count int)
-    find(shift, hash int, key Key) (val Value, ok bool)
+    assoc(shift uint, hash uint32, key Key, val Value) inode
+    dissoc(shift uint, hash uint32, key Key) inode
+    find(shift uint, hash uint32, key Key) (val Value, ok bool)
     keys() []Key
     vals() []Value
+    count() int
 }
 
 // New creates a new persistent associative array.
-func New() *Map {
-    return &Map{empty}
+func New() Map {
+    return empty
 }
 
 // Adds a new key/value pair to the associative array
-func Put(m *Map, key Key, val Value) *Map {
+func Put(m Map, key Key, val Value) Map {
     hash := key.Hash()
-    return &Map{m.root.assoc(0, hash, key, val)}
+    return m.assoc(0, hash, key, val)
 }
 
 // Delete removes the key and its related value from the array.
-func Delete(m *Map, key Key) *Map {
+func Delete(m Map, key Key) Map {
     hash := key.Hash()
-    return &Map{m.root.dissoc(0, hash, key, val)}
+    return m.dissoc(0, hash, key)
 }
 
 // Get returns the value stored in the map at a given key.
-func Get(m *Map, key Key) Value {
+func Get(m Map, key Key) (val Value, ok bool) {
     hash := key.Hash()
-    return m.root.find(0, hash, key)
+    val, ok = m.find(0, hash, key)
+    return val, ok
 }
 
 // Keys returns a list of all the keys stored in the array.
-func Keys(m *Map) []Key {
-    return m.root.keys()
+func Keys(m Map) []Key {
+    return m.keys()
 }
 
 // Values returns a list of all the values stored in the array.
-func Values(m *Map) []Value {
+func Values(m Map) []Value {
     return m.vals()
 }
 
 // Len determines the number of items in the map.
-func Len(m *Map) int {
-    return m.root.count
+func Len(m Map) int {
+    return m.count()
 }

@@ -4,24 +4,28 @@ package hashmap
 type emptyNode struct{}
 
 // Assoc'ing turns an empty node into a leaf node.
-func (n *emptyNode) assoc(shift, hash int, key Key, val Value) (node inode, count int) {
-    return &leafNode{hash, key, val}, 1
+func (n *emptyNode) assoc(shift uint, hash uint32, key Key, val Value) inode {
+    return &leafNode{hash, key, val}
 }
 
-func (n *branchNode) dissoc(shift, hash int, key Key) (node inode, count int) {
-    return n, 0
+func (n *emptyNode) dissoc(shift uint, hash uint32, key Key) inode {
+    return n
 }
 
-func (n *branchNode) find(shift, hash int, key Key) (val Value, ok bool) {
+func (n *emptyNode) find(shift uint, hash uint32, key Key) (val Value, ok bool) {
     return 0, false
 }
 
-func (n *branchNode) keys() []Key {
+func (n *emptyNode) keys() []Key {
     return []Key{}
 }
 
-func (n *branchNode) vals() []Value {
+func (n *emptyNode) vals() []Value {
     return []Value{}
+}
+
+func (n *emptyNode) count() int {
+    return 0
 }
 
 // a holder for a non-existent value
