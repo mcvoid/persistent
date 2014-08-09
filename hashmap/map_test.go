@@ -21,7 +21,7 @@ func deleteInt(m Map, k int) Map {
     return Delete(m, intKey(k))
 }
 
-func TestEmpty(t *testing.T) {
+func TestNew(t *testing.T) {
 	m := New()
 	if m == nil {
 		t.Error("should not be nil")
@@ -76,5 +76,37 @@ func TestLen(t *testing.T) {
     }
     if l := Len(m); l != 100 {
         t.Error("incorrect length: expected 100, actual ", l)
+    }
+}
+
+func TestKeys(t *testing.T) {
+    m := New()
+    m = putInt(putInt(putInt(m, 0, 0), 1, 1), 2, 2)
+    for _, v := range []intKey{0, 1, 2} {
+        found := false
+        for _, k := range Keys(m) {
+            if v == k.(intKey) {
+                found = true
+            }
+        }
+        if !found {
+            t.Error("Key not found: ", v)
+        }
+    }
+}
+
+func TestValues(t *testing.T) {
+    m := New()
+    m = putInt(putInt(putInt(m, 0, 0), 1, 1), 2, 2)
+    for _, v := range []int{0, 1, 2} {
+        found := false
+        for _, u := range Values(m) {
+            if v == u.(int) {
+                found = true
+            }
+        }
+        if !found {
+            t.Error("Key not found: ", v)
+        }
     }
 }
